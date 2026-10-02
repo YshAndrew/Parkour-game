@@ -136,8 +136,9 @@ export class Platformer {
     const canGroundJump = b.onGround || this.coyote > 0;
     const canWallJump = !b.onGround && b.onWall;
 
-    if (this.jumpBuf > 0 && input.down && b.onGround) {
-      // 下 + 跳：下穿单向平台
+    // 下 + 跳：下穿单向平台（只有脚下不是实心地面时才生效，避免消费掉实心地上的跳跃）
+    const standingOnSolid = world.isSolid({ x: b.x, y: b.y + b.h, w: b.w, h: 2 });
+    if (this.jumpBuf > 0 && input.down && b.onGround && !standingOnSolid) {
       this.jumpBuf = 0;
       b.dropping = true;
       b.y += 2;
@@ -215,9 +216,13 @@ export class Platformer {
     b.onWall = false;
     b.wallDir = 0;
 
+    // 移动前就已嵌入地形？（例如出生点偏移、被移动平台推入墙体）
+    // 这种情况必须交给 Y 轴向上解卡，绝不能在 X 轴上把角色横向挤飞。
+    const wasStuck = world.isSolid(b);
+
     // X（b.onGround 此刻仍是上帧值，用于判断是否允许贴墙）
     b.x += b.vx * dt;
-    if (world.isSolid(b)) {
+    if (!wasStuck && world.isSolid(b)) {
       const dir = Math.sign(b.vx) || 1;
       while (world.isSolid(b)) b.x -= dir * 0.5;
       b.vx = 0;
@@ -233,7 +238,14 @@ export class Platformer {
     b.onGround = false;
     b.y += b.vy * dt;
 
-    if (world.isSolid(b)) {
+    if (wasStuck && world.isSolid(b)) {
+      // 向上解卡：最多抬升 3 格，避免卡在方块里
+      let guard = 0;
+      while (world.isSolid(b) && guard++ < 3 * TILE) b.y -= 1;
+      b.vy = 0;
+      b.onGround = true;
+      if (!wasGround) this.justLanded = true;
+    } else if (world.isSolid(b)) {
       const dir = Math.sign(b.vy) || 1;
       while (world.isSolid(b)) b.y -= dir * 0.5;
       if (dir > 0) {

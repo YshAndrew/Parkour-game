@@ -4,7 +4,19 @@
  * 新地图 = 往 src/levels/maps/ 里丢一个 .ts 文件即可（见该目录下任意示例）。
  */
 
-import { TILE } from './config';
+import { PLAYER, TILE } from './config';
+
+/**
+ * 把格子坐标换算成“站在该格底面上”的角色中心点。
+ * 注意：角色高度(18px)比 tile(16px)高，若直接用格子中心会让脚底
+ * 嵌入下一格 1px，碰撞解算时会被误判为横向碰撞而挤飞。
+ */
+export function standPos(tileX: number, tileY: number) {
+  return {
+    x: tileX * TILE + TILE / 2,
+    y: (tileY + 1) * TILE - PLAYER.height / 2,
+  };
+}
 
 /** 单个瓦片的符号表 */
 export const LEGEND = {
@@ -58,7 +70,7 @@ export function parseLevel(data: LevelData): ParsedLevel {
   const width = Math.max(...data.grid.map((r) => r.length));
   const height = data.grid.length;
   const grid: TileKind[][] = [];
-  let spawn = { x: TILE * 1.5, y: TILE * 1.5 };
+  let spawn = standPos(1, 1);
   const exits: { x: number; y: number }[] = [];
   const coins: { x: number; y: number }[] = [];
 
@@ -68,7 +80,7 @@ export function parseLevel(data: LevelData): ParsedLevel {
       const ch = data.grid[y][x] ?? '.';
       const kind = (LEGEND as Record<string, TileKind>)[ch] ?? 'empty';
       row.push(kind);
-      if (kind === 'spawn') spawn = { x: x * TILE + TILE / 2, y: y * TILE + TILE / 2 };
+      if (kind === 'spawn') spawn = standPos(x, y);
       if (kind === 'exit') exits.push({ x: x * TILE + TILE / 2, y: y * TILE + TILE / 2 });
       if (kind === 'coin') coins.push({ x: x * TILE + TILE / 2, y: y * TILE + TILE / 2 });
     }

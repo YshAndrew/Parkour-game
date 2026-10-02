@@ -6,6 +6,7 @@
 import Phaser from 'phaser';
 import { CAMERA, COLORS, PLAYER, TILE } from '../core/config';
 import { Input, actionFor } from '../core/controls';
+import { standPos } from '../core/map-format';
 import type { Rect } from '../core/platformer';
 import { Platformer } from '../core/platformer';
 import { Save } from '../core/save-data';
@@ -19,6 +20,8 @@ interface Coin {
 interface Checkpoint {
   x: number;
   y: number;
+  tileX: number;
+  tileY: number;
   flag: Phaser.GameObjects.Rectangle;
   activated: boolean;
 }
@@ -92,8 +95,10 @@ export class GameScene extends Phaser.Scene {
       g.destroy();
     }
 
-    this.events.emit('ready');
-    this.game.events.emit('scene-ready');
+    // 注意：事件名必须避开 Phaser 内置场景事件（如 'ready'/'pause'/'resume'），
+    // 否则会在 init() 之前就被触发，导致关卡状态被重置。统一加 game: 前缀。
+    this.events.emit('game:ready');
+    this.game.events.emit('game:scene-ready');
   }
 
   // ---------- 碰撞查询（注入 Platformer 的 world） ----------
@@ -200,19 +205,20 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // 出口传送门
+    // 出口传送门（做成偏高的门，避免玩家跳着过去时“擦肩而过”）
     for (const e of this.level.exits) {
-      const portal = this.add.rectangle(e.x, e.y, 12, 20, 0x8ff0a4).setStrokeStyle(2, 0x2ecc71);
+      const portal = this.add.rectangle(e.x, e.y - 4, 12, 28, 0x8ff0a4).setStrokeStyle(2, 0x2ecc71);
+      const inner = this.add.rectangle(e.x, e.y - 4, 4, 20, 0x2ecc71);
       this.tweens.add({
-        targets: portal,
-        scaleY: 1.15,
-        alpha: 0.75,
+        targets: [portal, inner],
+        scaleY: 1.1,
+        alpha: 0.7,
         yoyo: true,
         repeat: -1,
         duration: 700,
         ease: 'Sine.easeInOut',
       });
-      this.exitRects.push(new Phaser.Geom.Rectangle(e.x - 6, e.y - 10, 12, 20));
+      this.exitRects.push(new Phaser.Geom.Rectangle(e.x - 6, e.y - 20, 12, 30));
     }
   }
 
@@ -232,7 +238,7 @@ export class GameScene extends Phaser.Scene {
         if (kind === 'checkpoint') {
           const flag = this.add.rectangle(px, py - 4, 10, 8, 0x95a5a6);
           this.add.rectangle(px, py + 4, 2, 10, 0x7f8c8d);
-          this.checkpoints.push({ x: px, y: py, flag, activated: false });
+          this.checkpoints.push({ x: px, y: py, tileX: x, tileY: y, flag, activated: false });
         }
 
         if (kind === 'moving' || kind === 'moving-v') {
@@ -300,14 +306,14 @@ export class GameScene extends Phaser.Scene {
 
   private togglePause() {
     this.state = this.state === 'paused' ? 'playing' : 'paused';
-    this.events.emit(this.state === 'paused' ? 'paused' : 'resumed');
+    this.events.emit(this.state === 'paused' ? 'game:paused' : 'game:resumed');
   }
 
   /** 供 UI 暂停菜单“继续”按钮调用 */
   resumeGame() {
     if (this.state === 'paused') {
       this.state = 'playing';
-      this.events.emit('resumed');
+      this.events.emit('game:resumed');
     }
   }
 
@@ -315,7 +321,7 @@ export class GameScene extends Phaser.Scene {
     if (this.state !== 'playing') return;
     this.state = 'dead';
     this.deaths++;
-    this.events.emit('died', this.deaths);
+    this.events.emit('game:died', this.deaths);
 
     const p = this.add.particles(this.player.cx, this.player.cy, 'px', {
       speed: { min: 60, max: 180 },
@@ -346,7 +352,7 @@ export class GameScene extends Phaser.Scene {
     const ms = Math.floor(this.elapsed * 1000);
     Save.recordLevel(this.level.id, ms, this.deaths, this.coinsTaken, this.level.totalCoins);
     Save.unlock(this.level.index + 1);
-    this.events.emit('win', {
+    this.events.emit('game:win', {
       levelId: this.level.id,
       levelIndex: this.level.index,
       ms,
@@ -393,7 +399,7 @@ export class GameScene extends Phaser.Scene {
 
     if (this.player.cy > this.level.pixelHeight + 60) this.killPlayer();
 
-    this.events.emit('tick', {
+    this.events.emit('game:tick', {
       ms: Math.floor(this.elapsed * 1000),
       deaths: this.deaths,
       coins: this.coinsTaken,
@@ -496,7 +502,8 @@ export class GameScene extends Phaser.Scene {
       if (this.overlapsPlayer(cp.x - 8, cp.y - 12, 16, 24)) {
         cp.activated = true;
         cp.flag.setFillStyle(0x8ff0a4);
-        this.respawnPoint = { x: cp.x, y: cp.y - 8 };
+        // 站在旗帜所在格的底面上，避免脚底嵌入下方方块
+        this.respawnPoint = standPos(cp.tileX, cp.tileY);
       }
     }
   }

@@ -17,6 +17,29 @@ export const UI = {
   init() {
     UI.showOverlay();
     UI.showTitle();
+    window.addEventListener('resize', () => UI.syncHudToCanvas());
+  },
+
+  /** 由 main 在 Phaser 画布创建完成后调用，绑定尺寸监听 */
+  bindCanvas() {
+    const canvas = document.querySelector('#game-container canvas');
+    if (canvas && typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(() => UI.syncHudToCanvas()).observe(canvas);
+    }
+    UI.syncHudToCanvas();
+  },
+
+  /** 把 HUD 覆盖层对齐到 canvas 的实际显示区域，避免落在黑边上 */
+  syncHudToCanvas() {
+    const app = document.getElementById('app');
+    const canvas = document.querySelector('#game-container canvas') as HTMLCanvasElement | null;
+    if (!app || !canvas) return;
+    const a = app.getBoundingClientRect();
+    const c = canvas.getBoundingClientRect();
+    hud.style.left = `${c.left - a.left}px`;
+    hud.style.top = `${c.top - a.top}px`;
+    hud.style.width = `${c.width}px`;
+    hud.style.height = `${c.height}px`;
   },
 
   // ---------- 菜单 ----------
@@ -67,20 +90,21 @@ export const UI = {
   // ---------- 游戏内 ----------
 
   showHUD(levelName: string) {
+    UI.syncHudToCanvas();
     hud.classList.remove('hidden');
     levelTitle.textContent = levelName;
-    coinText.textContent = '🪙 0 / 0';
-    deathText.textContent = '💀 0';
-    timeText.textContent = '⏱ 0.0s';
+    coinText.textContent = '0 / 0';
+    deathText.textContent = '0';
+    timeText.textContent = '0.0s';
   },
   hideHUD() {
     hud.classList.add('hidden');
   },
 
   updateHUD({ ms, deaths, coins, totalCoins }: { ms: number; deaths: number; coins: number; totalCoins: number }) {
-    coinText.textContent = `🪙 ${coins} / ${totalCoins}`;
-    deathText.textContent = `💀 ${deaths}`;
-    timeText.textContent = `⏱ ${(ms / 1000).toFixed(1)}s`;
+    coinText.textContent = `${coins} / ${totalCoins}`;
+    deathText.textContent = `${deaths}`;
+    timeText.textContent = `${(ms / 1000).toFixed(1)}s`;
   },
 
   flashDeath() {

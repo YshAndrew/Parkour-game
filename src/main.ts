@@ -37,7 +37,7 @@ function startLevel(index: number) {
   UI.hideOverlay();
   UI.hidePause();
   game.scene.resume('game');
-  scene.events.once('ready', () => {
+  scene.events.once('game:ready', () => {
     UI.showHUD(LevelRegistry.get(index).name);
     scene.startLevel();
   });
@@ -51,27 +51,40 @@ function showMenu() {
 }
 
 // 场景 → UI（GameScene 实例跨 restart 复用同一个 events emitter，只需绑定一次）
-game.events.once('scene-ready', () => {
+game.events.once('game:scene-ready', () => {
   if (wired) return;
   wired = true;
   const scene = getScene();
 
   scene.events.on(
-    'tick',
+    'game:tick',
     (d: { ms: number; deaths: number; coins: number; totalCoins: number }) => UI.updateHUD(d),
   );
-  scene.events.on('died', () => UI.flashDeath());
+  scene.events.on('game:died', () => UI.flashDeath());
   scene.events.on(
-    'win',
+    'game:win',
     (d: { levelId: string; levelIndex: number; ms: number; deaths: number; coins: number; totalCoins: number }) => {
       UI.showWin({ ...d, isLast: d.levelIndex + 1 >= LevelRegistry.count() });
     },
   );
-  scene.events.on('paused', () => UI.showPause(() => scene.resumeGame()));
-  scene.events.on('resumed', () => UI.hidePause());
+  scene.events.on('game:paused', () => UI.showPause(() => scene.resumeGame()));
+  scene.events.on('game:resumed', () => UI.hidePause());
 
-  showMenu();
+  UI.bindCanvas();
+
+  // 深链：?level=2 直接打开第 2 关（方便调试新地图）
+  const wanted = Number(new URLSearchParams(location.search).get('level'));
+  if (Number.isInteger(wanted) && wanted >= 1 && wanted <= LevelRegistry.count()) {
+    startLevel(wanted - 1);
+  } else {
+    showMenu();
+  }
 });
+
+// 开发期调试入口（生产构建里不存在）
+if (import.meta.env.DEV) {
+  (window as unknown as Record<string, unknown>).__parkour = { game, UI, LevelRegistry, startLevel };
+}
 
 // UI → 场景
 UI.on('play-next', (next?: number) =>
