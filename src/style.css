@@ -141,7 +141,6 @@ html, body {
 .px-btn:hover { filter: brightness(1.1); }
 .px-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #000; }
 .px-btn.secondary { background: #9aa0b4; }
-.px-btn.green { background: var(--accent-2); }
 
 /* ========== 选关卡片 ========== */
 .level-grid {
@@ -177,9 +176,10 @@ html, body {
   margin-bottom: 8px;
 }
 
-.level-card .name { font-size: 14px; font-weight: bold; margin-bottom: 6px; }
-.level-card .best { font-size: 12px; color: var(--accent); min-height: 14px; }
-.level-card .dim { color: #666c82; }
+.level-card .name { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+.level-card .hint { font-size: 11px; color: #9aa0b4; line-height: 1.5; min-height: 28px; }
+.level-card .best { font-size: 11px; color: var(--accent); min-height: 13px; margin-top: 5px; }
+.level-card.dim { color: #666c82; opacity: 0.65; }
 
 /* ========== 结算数据 ========== */
 .stats {

@@ -77,7 +77,8 @@ export const UI = {
       card.innerHTML = `
         <div class="num" style="background:${unlocked ? '#ffcd75' : '#555'}">${lv.index + 1}</div>
         <div class="name">${lv.name}</div>
-        <div class="best">${save.bestMs !== null ? `最佳: ${UI.fmtTime(save.bestMs)}` : ''}</div>
+        <div class="hint">${unlocked ? (lv.hint ?? '') : '通关上一关解锁'}</div>
+        <div class="best">${save.bestMs !== null ? `最佳 ${UI.fmtTime(save.bestMs)} · 金币 ${save.coins}/${save.totalCoins}` : ''}</div>
       `;
       card.addEventListener('click', () => UI.emit('play-level', lv.index));
       grid.appendChild(card);
@@ -194,11 +195,6 @@ export const UI = {
   },
   h1(text: string) {
     const el = document.createElement('h1');
-    el.textContent = text;
-    return el;
-  },
-  h2(text: string) {
-    const el = document.createElement('h2');
     el.textContent = text;
     return el;
   },

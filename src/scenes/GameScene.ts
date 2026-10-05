@@ -34,7 +34,6 @@ interface Mover {
   speed: number;
   t: number;
   dx: number;
-  dy: number;
 }
 
 export class GameScene extends Phaser.Scene {
@@ -254,7 +253,6 @@ export class GameScene extends Phaser.Scene {
             speed: 1.6, // 角速度 rad/s
             t: 0,
             dx: 0,
-            dy: 0,
           });
         }
       }
@@ -414,7 +412,6 @@ export class GameScene extends Phaser.Scene {
       const nx = m.axis === 'x' ? m.origin + off : m.rect.x + m.rect.w / 2;
       const ny = m.axis === 'y' ? m.origin + off : m.rect.y + m.rect.h / 2;
       m.dx = nx - (m.rect.x + m.rect.w / 2);
-      m.dy = ny - (m.rect.y + m.rect.h / 2);
       m.rect.x = nx - m.rect.w / 2;
       m.rect.y = ny - m.rect.h / 2;
       m.gfx.setPosition(nx, ny);

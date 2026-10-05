@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:maps": "node scripts/validate-maps.mjs && node scripts/simulate.mjs"
   },
   "dependencies": {
     "phaser": "^3.90.0"

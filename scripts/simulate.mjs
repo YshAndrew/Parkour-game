@@ -364,14 +364,13 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith('.ts')).sort()) {
   // 与 src/core/map-format.ts 的 standPos 一致：脚底贴该格底面
   const spawn = { x: sx * TILE + TILE / 2, y: (sy + 1) * TILE - P.h / 2 };
 
-  const world_ = world;
-  if (world_.isSolid({ x: spawn.x - P.w / 2, y: spawn.y - P.h / 2, w: P.w, h: P.h })) {
+  if (world.isSolid({ x: spawn.x - P.w / 2, y: spawn.y - P.h / 2, w: P.w, h: P.h })) {
     console.log(`✗ ${file}  出生点嵌在方块里`);
     failed = true;
     continue;
   }
 
-  const r = runBot(world_, spawn);
+  const r = runBot(world, spawn);
   const ok = r.reached && r.deaths === 0;
   console.log(
     `${ok ? '✓' : '✗'} ${file}  到达终点=${r.reached}  死亡=${r.deaths}  推进到 x=${Math.round(r.maxX)}`,
