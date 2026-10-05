@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>像素跑酷 Pixel Parkour</title>
+    <script type="module" crossorigin src="./assets/index-NgUbSCvo.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CInnnniN.css">
+  </head>
+  <body>
+    <div id="app">
+      <div id="game-container"></div>
+
+      <!-- 游戏内 HUD -->
+      <div id="hud" class="hidden">
+        <div class="hud-left">
+          <span id="hud-level"></span>
+        </div>
+        <div class="hud-right">
+          <span id="hud-coins" class="ico-coin" title="金币"></span>
+          <span id="hud-deaths" class="ico-death" title="死亡次数"></span>
+          <span id="hud-time" class="ico-time" title="用时"></span>
+        </div>
+      </div>
+
+      <!-- 菜单 / 暂停 / 结算 覆盖层（由 ui.ts 渲染） -->
+      <div id="overlay"></div>
+
+      <!-- 死亡闪屏 -->
+      <div id="flash"></div>
+    </div>
+  </body>
+</html>

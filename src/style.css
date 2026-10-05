@@ -1,0 +1,249 @@
+/* ========== 基础 ========== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --ink: #1a1c2c;
+  --paper: #f4f4f8;
+  --accent: #ffcd75;
+  --accent-2: #8ff0a4;
+  --danger: #ef7d8a;
+  --panel: rgba(16, 18, 30, 0.92);
+  --px-font: "Courier New", "PingFang SC", "Microsoft YaHei", monospace;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #0d0f18;
+  overflow: hidden;
+  font-family: var(--px-font);
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#game-container canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+  outline: 4px solid #000;
+}
+
+.hidden { display: none !important; }
+
+/* ========== HUD ========== */
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 10px 16px;
+  pointer-events: none;
+  color: var(--paper);
+  font-weight: bold;
+  font-size: 15px;
+  text-shadow: 2px 2px 0 #000;
+  letter-spacing: 1px;
+}
+
+#hud .hud-right span { margin-left: 20px; }
+#hud-time { color: #7ec8e3; }
+#hud-coins { color: #ffd866; }
+#hud-deaths { color: var(--danger); }
+
+/* 用 CSS 画像素小图标，避免 emoji 缺字形变成方块 */
+#hud .hud-right span::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 7px;
+  vertical-align: -1px;
+  border: 2px solid #000;
+}
+
+#hud-coins::before { background: #ffd866; }
+#hud-deaths::before { background: var(--danger); }
+#hud-time::before { background: #7ec8e3; }
+
+/* ========== 覆盖层通用 ========== */
+#overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  padding: 14px;
+}
+
+#overlay.active { pointer-events: auto; background: rgba(8, 9, 16, 0.72); }
+
+.panel {
+  background: var(--panel);
+  border: 4px solid #000;
+  box-shadow: 0 0 0 4px var(--paper), 8px 8px 0 8px rgba(0, 0, 0, 0.45);
+  padding: 24px 32px;
+  color: var(--paper);
+  text-align: center;
+  /* 必须是确定宽度，否则选关网格会退化成单列 */
+  width: min(640px, 92vw);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.panel h1 {
+  font-size: 26px;
+  letter-spacing: 4px;
+  color: var(--accent);
+  text-shadow: 3px 3px 0 #000;
+  margin-bottom: 6px;
+}
+
+.panel h2 {
+  font-size: 18px;
+  letter-spacing: 2px;
+  margin-bottom: 14px;
+}
+
+.panel .sub {
+  color: #9aa0b4;
+  font-size: 13px;
+  margin-bottom: 18px;
+  line-height: 1.7;
+}
+
+/* ========== 按钮 ========== */
+.px-btn {
+  font-family: var(--px-font);
+  font-weight: bold;
+  font-size: 15px;
+  letter-spacing: 2px;
+  color: var(--ink);
+  background: var(--accent);
+  border: 3px solid #000;
+  box-shadow: 0 4px 0 #000;
+  padding: 10px 22px;
+  margin: 6px;
+  cursor: pointer;
+  transition: transform 60ms, box-shadow 60ms;
+}
+
+.px-btn:hover { filter: brightness(1.1); }
+.px-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #000; }
+.px-btn.secondary { background: #9aa0b4; }
+
+/* ========== 选关卡片 ========== */
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+  /* 只有网格自身滚动，保证下方按钮始终可见 */
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.level-card {
+  background: #23263a;
+  border: 3px solid #000;
+  box-shadow: 0 4px 0 #000;
+  padding: 14px 10px;
+  cursor: pointer;
+  transition: transform 80ms;
+}
+
+.level-card:hover { transform: translateY(-3px); background: #2d3150; }
+.level-card:active { transform: translateY(2px); box-shadow: 0 0 0 #000; }
+
+.level-card .num {
+  display: inline-block;
+  background: var(--theme, #888);
+  color: #000;
+  border: 2px solid #000;
+  padding: 2px 8px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.level-card .name { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+.level-card .hint { font-size: 11px; color: #9aa0b4; line-height: 1.5; min-height: 28px; }
+.level-card .best { font-size: 11px; color: var(--accent); min-height: 13px; margin-top: 5px; }
+.level-card.dim { color: #666c82; opacity: 0.65; }
+
+/* ========== 结算数据 ========== */
+.stats {
+  display: flex;
+  gap: 26px;
+  justify-content: center;
+  margin: 16px 0 20px;
+  font-size: 15px;
+}
+
+.stats .stat b { display: block; font-size: 22px; color: var(--accent); margin-top: 4px; }
+.stats .stat .new-best { color: var(--accent-2); animation: blink 0.6s steps(2) infinite; }
+
+@keyframes blink { 50% { opacity: 0.25; } }
+
+.controls-table {
+  display: inline-block;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.9;
+  color: #c9cede;
+  margin: 4px 0 14px;
+}
+
+.controls-table kbd {
+  background: #000;
+  border: 2px solid #555;
+  padding: 1px 7px;
+  margin-right: 4px;
+  color: var(--accent);
+  font-family: var(--px-font);
+}
+
+/* ========== 小屏幕适配 ========== */
+@media (max-width: 640px) {
+  .panel { padding: 16px 14px; width: 96vw; }
+  .panel h1 { font-size: 19px; letter-spacing: 2px; }
+  .panel .sub { font-size: 11px; margin-bottom: 12px; }
+  .level-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; max-height: 40vh; }
+  .level-card { padding: 10px 6px; }
+  .level-card .name { font-size: 12px; }
+  .level-card .best { font-size: 10px; }
+  .px-btn { font-size: 13px; padding: 8px 14px; margin: 4px; }
+  .controls-table { font-size: 11px; }
+  .stats { gap: 14px; font-size: 12px; }
+  .stats .stat b { font-size: 17px; }
+  #hud { font-size: 12px; padding: 8px 10px; }
+  #hud .hud-right span { margin-left: 12px; }
+}
+
+/* 矮屏（横屏手机） */
+@media (max-height: 520px) {
+  .level-grid { max-height: 44vh; }
+  .controls-table { line-height: 1.6; }
+}
+
+/* ========== 死亡闪屏 ========== */
+#flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease-out;
+}
+
+#flash.on { opacity: 0.75; transition: none; }
