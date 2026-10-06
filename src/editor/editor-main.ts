@@ -7,6 +7,7 @@ import Phaser from 'phaser';
 import { LevelRegistry } from '../levels/registry';
 import { validateGrid } from '../core/validate.ts';
 import { simulateGrid } from '../core/simulate.ts';
+import { generateMap } from '../core/generator.ts';
 import { EditorScene } from './editor-scene.ts';
 import { PlayScene } from './play-scene.ts';
 import { editorState, newLevel, setMeta, setRows, subscribe, width, height } from './state.ts';
@@ -154,6 +155,50 @@ function scheduleSimulate() {
   simTimer = window.setTimeout(updateSimulate, 700);
 }
 
+// ---------- 自动生成 ----------
+
+function bindGenPanel() {
+  const diff = $('gen-diff') as HTMLInputElement;
+  const diffVal = $('gen-diff-val');
+  const width = $('gen-width') as HTMLInputElement;
+  const theme = $('gen-theme') as HTMLSelectElement;
+  const seed = $('gen-seed') as HTMLInputElement;
+  const result = $('gen-result');
+
+  const sync = () => {
+    diffVal.textContent = Number(diff.value).toFixed(2);
+  };
+  diff.addEventListener('input', sync);
+  sync();
+
+  $('btn-gen').addEventListener('click', () => {
+    const d = Number(diff.value);
+    const w = Math.max(48, parseInt(width.value, 10) || 80);
+    const seedRaw = seed.value.trim();
+    const s = seedRaw === '' ? undefined : parseInt(seedRaw, 10);
+    const t = theme.value as 'forest' | 'cave' | 'sky';
+
+    const res = generateMap({ difficulty: d, width: w, seed: s });
+    if (!res) {
+      result.className = 'panel-box bad';
+      result.textContent = '✗ 生成失败：连续 6 次结构/理论校验未过，请调整参数重试';
+      toast('生成失败，调整难度/宽度重试', 'error');
+      return;
+    }
+    setRows(res.rows);
+    setMeta({ id: res.id, name: res.name, hint: res.hint, theme: t });
+
+    const sim = res.simulate
+      ? res.botOk
+        ? '仿真：bot 零死亡通关'
+        : `仿真：bot ${res.simulate.deaths} 死（推进 x=${Math.round(res.simulate.maxX)}，bot 局限，理论可通关）`
+      : '仿真：未运行';
+    result.className = 'panel-box ok';
+    result.textContent = `✓ ${res.height}×${res.width} 种子=${res.seed}  ${sim}`;
+    toast(`已生成「${res.name}」（种子 ${res.seed}），可继续编辑 / 试玩 / 保存`, 'success');
+  });
+}
+
 function bindLoadExisting() {
   const sel = $('load-existing') as HTMLSelectElement;
   sel.innerHTML = '<option value="">— 选择现有地图 —</option>';
@@ -211,6 +256,7 @@ game.events.once(Phaser.Core.Events.READY, () => {
   buildPalette(editor);
   bindMeta();
   bindLoadExisting();
+  bindGenPanel();
   updateSize();
   updateValidate();
   updateSimulate();

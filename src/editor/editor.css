@@ -38,6 +38,18 @@ body {
   color: #ffcd75;
   margin-bottom: 12px;
 }
+.brand .back-link {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #7ec8e3;
+  text-decoration: none;
+}
+.brand .back-link:hover {
+  color: #b8e6f5;
+  text-decoration: underline;
+}
 
 #palette {
   display: grid;
@@ -165,6 +177,20 @@ body {
 #sidebar select:focus {
   outline: none;
   border-color: #8ff0a4;
+}
+
+#sidebar label.gen-diff-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#sidebar label.gen-diff-row input {
+  flex: 1;
+  margin-top: 0;
+}
+#sidebar label.gen-diff-row span {
+  min-width: 34px;
+  text-align: right;
 }
 
 button {

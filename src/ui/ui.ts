@@ -58,7 +58,11 @@ export const UI = {
         '重来:': 'R',
       }),
       UI.btn('开始游戏', () => UI.emit('play-next')),
+      UI.btn('无限模式', () => UI.emit('play-infinity'), 'secondary'),
       UI.btn('选关', UI.showLevelSelect, 'secondary'),
+      UI.btn('地图编辑器', () => {
+        window.location.href = './editor.html';
+      }, 'secondary'),
     ]);
     overlay.appendChild(panel);
   },
@@ -147,21 +151,32 @@ export const UI = {
     coins: number;
     totalCoins: number;
     isLast: boolean;
+    isInfinity?: boolean;
+    round?: number;
+    runDeaths?: number;
+    runCoins?: number;
   }) {
     UI.clearOverlay();
     overlay.classList.add('active');
     const save = Save.level(data.levelId);
     const isBest = save.bestMs !== null && data.ms <= save.bestMs;
     const panel = UI.panel([
-      UI.h1('关卡完成！'),
+      UI.h1(data.isInfinity ? `第 ${data.round} 关完成！` : '关卡完成！'),
       UI.div('stats', `
         <div class="stat">用时 <b class="${isBest ? 'new-best' : ''}">${UI.fmtTime(data.ms)}</b></div>
         <div class="stat">死亡 <b>${data.deaths}</b></div>
         <div class="stat">金币 <b>${data.coins} / ${data.totalCoins}</b></div>
+        ${
+          data.isInfinity
+            ? `<div class="stat">无限累计：通关 <b>${data.round}</b> 关 · 死亡 <b>${data.runDeaths}</b> · 金币 <b>${data.runCoins}</b></div>`
+            : ''
+        }
       `),
-      data.isLast
-        ? UI.p('全关卡通关！感谢游玩 🎉')
-        : UI.btn('下一关', () => UI.emit('play-next', data.levelIndex + 1)),
+      data.isInfinity
+        ? UI.btn(`继续无限（第 ${(data.round ?? 0) + 1} 关）`, () => UI.emit('infinity-next'))
+        : data.isLast
+          ? UI.p('全关卡通关！感谢游玩 🎉')
+          : UI.btn('下一关', () => UI.emit('play-next', data.levelIndex + 1)),
       UI.btn('选关', UI.showLevelSelect, 'secondary'),
       UI.btn('菜单', () => UI.emit('go-menu'), 'secondary'),
     ]);

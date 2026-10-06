@@ -3,6 +3,8 @@ import { BootScene } from './scenes/BootScene';
 import { GameScene } from './scenes/GameScene';
 import { LevelRegistry } from './levels/registry';
 import { Save } from './core/save-data';
+import { generateMap } from './core/generator';
+import type { LevelData } from './core/map-format';
 import { UI } from './ui/ui';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -27,21 +29,71 @@ const game = new Phaser.Game(config);
 let currentLevelIndex = 0;
 let wired = false;
 
+// ---------- 无限模式状态 ----------
+let infinityMode = false;
+const infinity = {
+  round: 0,
+  deaths: 0,
+  coins: 0,
+  level: null as LevelData | null,
+  label: '',
+};
+
 function getScene() {
   return game.scene.getScene('game') as unknown as GameScene;
 }
 
-function startLevel(index: number) {
-  currentLevelIndex = index;
+/** 用动态关卡数据（无限模式）或普通索引启动一关 */
+function launchLevel(data: { levelIndex?: number; level?: LevelData }, label: string) {
   const scene = getScene();
   UI.hideOverlay();
   UI.hidePause();
   game.scene.resume('game');
   scene.events.once('game:ready', () => {
-    UI.showHUD(LevelRegistry.get(index).name);
+    UI.showHUD(label);
     scene.startLevel();
   });
-  scene.scene.restart({ levelIndex: index });
+  scene.scene.restart(data);
+}
+
+function startLevel(index: number) {
+  infinityMode = false;
+  currentLevelIndex = index;
+  launchLevel({ levelIndex: index }, LevelRegistry.get(index).name);
+}
+
+/** 无限模式：生成一张随机关卡并开始（难度随轮数递增） */
+function loadInfinityLevel() {
+  const round = infinity.round;
+  const diff = Math.min(1.0, 0.3 + round * 0.05);
+  let res = generateMap({ difficulty: diff, width: 80 });
+  if (!res) res = generateMap({ difficulty: Math.max(0.2, diff - 0.1), width: 80 }); // 极小概率兜底
+  if (!res) {
+    infinityMode = false;
+    UI.showTitle();
+    return;
+  }
+  const themes = ['forest', 'cave', 'sky'] as const;
+  const theme = themes[Math.floor(Math.random() * themes.length)];
+  infinity.level = {
+    meta: {
+      id: res.id,
+      name: `无限模式 · 第 ${round + 1} 关`,
+      hint: res.hint,
+      theme,
+    },
+    grid: res.rows,
+  };
+  infinity.label = `无限模式 · 第 ${round + 1} 关（难度 ${diff.toFixed(2)}）`;
+  launchLevel({ level: infinity.level }, infinity.label);
+}
+
+function startInfinity() {
+  infinityMode = true;
+  infinity.round = 0;
+  infinity.deaths = 0;
+  infinity.coins = 0;
+  loadInfinityLevel();
 }
 
 function showMenu() {
@@ -63,8 +115,29 @@ game.events.once('game:scene-ready', () => {
   scene.events.on('game:died', () => UI.flashDeath());
   scene.events.on(
     'game:win',
-    (d: { levelId: string; levelIndex: number; ms: number; deaths: number; coins: number; totalCoins: number }) => {
-      UI.showWin({ ...d, isLast: d.levelIndex + 1 >= LevelRegistry.count() });
+    (d: {
+      levelId: string;
+      levelIndex: number;
+      ms: number;
+      deaths: number;
+      coins: number;
+      totalCoins: number;
+      isInfinity?: boolean;
+    }) => {
+      if (d.isInfinity) {
+        infinity.deaths += d.deaths;
+        infinity.coins += d.coins;
+        UI.showWin({
+          ...d,
+          isLast: false,
+          isInfinity: true,
+          round: infinity.round + 1,
+          runDeaths: infinity.deaths,
+          runCoins: infinity.coins,
+        });
+      } else {
+        UI.showWin({ ...d, isLast: d.levelIndex + 1 >= LevelRegistry.count() });
+      }
     },
   );
   scene.events.on('game:paused', () => UI.showPause(() => scene.resumeGame()));
@@ -91,7 +164,21 @@ UI.on('play-next', (next?: number) =>
   startLevel(next ?? Math.min(Save.data.unlocked, LevelRegistry.count() - 1)),
 );
 UI.on('play-level', (index: number) => startLevel(index));
-UI.on('restart', () => startLevel(currentLevelIndex));
-UI.on('go-menu', () => showMenu());
+UI.on('play-infinity', () => startInfinity());
+UI.on('infinity-next', () => {
+  infinity.round++;
+  loadInfinityLevel();
+});
+UI.on('restart', () => {
+  if (infinityMode && infinity.level) {
+    launchLevel({ level: infinity.level }, infinity.label);
+  } else {
+    startLevel(currentLevelIndex);
+  }
+});
+UI.on('go-menu', () => {
+  infinityMode = false;
+  showMenu();
+});
 
 UI.init();

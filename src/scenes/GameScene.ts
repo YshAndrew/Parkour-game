@@ -7,6 +7,8 @@ import Phaser from 'phaser';
 import { CAMERA, COLORS, PLAYER, TILE } from '../core/config';
 import { Input, actionFor } from '../core/controls';
 import { standPos } from '../core/map-format';
+import type { LevelData } from '../core/map-format';
+import { parseLevel } from '../core/map-format';
 import type { Rect } from '../core/platformer';
 import { Platformer } from '../core/platformer';
 import { Save } from '../core/save-data';
@@ -38,6 +40,8 @@ interface Mover {
 
 export class GameScene extends Phaser.Scene {
   private level!: RegisteredLevel;
+  /** 无限模式：由外部动态传入 LevelData（不写存档、不解锁） */
+  private isInfinity = false;
   private player!: Platformer;
   private playerGfx!: Phaser.GameObjects.Container;
 
@@ -62,11 +66,18 @@ export class GameScene extends Phaser.Scene {
     super('game');
   }
 
-  init(data: { levelIndex?: number }) {
-    const idx = data.levelIndex ?? 0;
-    const lv = LevelRegistry.get(idx);
-    if (!lv) throw new Error(`关卡 ${idx} 不存在`);
-    this.level = lv;
+  init(data: { levelIndex?: number; level?: LevelData }) {
+    if (data.level) {
+      // 无限模式：动态关卡（生成器产出），index 用 -1 占位
+      this.isInfinity = true;
+      this.level = { ...parseLevel(data.level), index: -1, sourcePath: 'infinity' };
+    } else {
+      this.isInfinity = false;
+      const idx = data.levelIndex ?? 0;
+      const lv = LevelRegistry.get(idx);
+      if (!lv) throw new Error(`关卡 ${idx} 不存在`);
+      this.level = lv;
+    }
     this.coins = [];
     this.checkpoints = [];
     this.movers = [];
@@ -348,8 +359,10 @@ export class GameScene extends Phaser.Scene {
     if (this.state !== 'playing') return;
     this.state = 'win';
     const ms = Math.floor(this.elapsed * 1000);
-    Save.recordLevel(this.level.id, ms, this.deaths, this.coinsTaken, this.level.totalCoins);
-    Save.unlock(this.level.index + 1);
+    if (!this.isInfinity) {
+      Save.recordLevel(this.level.id, ms, this.deaths, this.coinsTaken, this.level.totalCoins);
+      Save.unlock(this.level.index + 1);
+    }
     this.events.emit('game:win', {
       levelId: this.level.id,
       levelIndex: this.level.index,
@@ -357,6 +370,7 @@ export class GameScene extends Phaser.Scene {
       deaths: this.deaths,
       coins: this.coinsTaken,
       totalCoins: this.level.totalCoins,
+      isInfinity: this.isInfinity,
     });
   }
 

@@ -9,7 +9,9 @@
   <body>
     <div id="editor-root">
       <aside id="toolbar">
-        <div class="brand">像素跑酷 · 地图编辑器</div>
+        <div class="brand">像素跑酷 · 地图编辑器
+          <a class="back-link" href="./index.html">← 返回游戏</a>
+        </div>
         <div id="palette"></div>
         <div class="hint">
           左键：放置<br />右键：擦除<br />中键拖动：平移<br />滚轮：缩放<br />Ctrl+Z：撤销
@@ -50,6 +52,31 @@
           <label>载入现有
             <select id="load-existing"></select>
           </label>
+        </section>
+
+        <section>
+          <h3>自动生成</h3>
+          <label class="gen-diff-row">难度
+            <input type="range" id="gen-diff" min="0.05" max="1" step="0.05" value="0.5" />
+            <span id="gen-diff-val">0.50</span>
+          </label>
+          <label>宽度
+            <input type="number" id="gen-width" min="48" max="200" value="80" />
+          </label>
+          <label>主题
+            <select id="gen-theme">
+              <option value="forest">forest 森林</option>
+              <option value="cave">cave 洞穴</option>
+              <option value="sky">sky 天空</option>
+            </select>
+          </label>
+          <label>种子（留空随机）
+            <input type="number" id="gen-seed" placeholder="如 42" />
+          </label>
+          <div class="row">
+            <button id="btn-gen" class="primary">⚙ 生成到画布</button>
+          </div>
+          <div id="gen-result" class="panel-box">—</div>
         </section>
 
         <section>
