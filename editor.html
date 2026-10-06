@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>像素跑酷 · 地图编辑器</title>
+    <link rel="stylesheet" href="/src/editor/editor.css" />
+  </head>
+  <body>
+    <div id="editor-root">
+      <aside id="toolbar">
+        <div class="brand">像素跑酷 · 地图编辑器</div>
+        <div id="palette"></div>
+        <div class="hint">
+          左键：放置<br />右键：擦除<br />中键拖动：平移<br />滚轮：缩放<br />Ctrl+Z：撤销
+        </div>
+      </aside>
+
+      <main id="canvas-wrap">
+        <div id="editor-canvas"></div>
+        <div id="status-bar"></div>
+      </main>
+
+      <aside id="sidebar">
+        <section>
+          <h3>关卡信息</h3>
+          <label>文件名(id)
+            <input id="f-id" placeholder="my-level" spellcheck="false" />
+          </label>
+          <label>名称
+            <input id="f-name" placeholder="第四关：我的关卡" />
+          </label>
+          <label>提示
+            <input id="f-hint" placeholder="选关界面的一句话提示" />
+          </label>
+          <label>主题
+            <select id="f-theme">
+              <option value="">无</option>
+              <option value="forest">forest 森林</option>
+              <option value="cave">cave 洞穴</option>
+              <option value="sky">sky 天空</option>
+            </select>
+          </label>
+        </section>
+
+        <section>
+          <h3>画布</h3>
+          <div id="size-info">—</div>
+          <button id="btn-new">新建（清空）</button>
+          <label>载入现有
+            <select id="load-existing"></select>
+          </label>
+        </section>
+
+        <section>
+          <h3>校验</h3>
+          <div id="validate-panel" class="panel-box">—</div>
+          <div class="row">
+            <button id="btn-simulate">跑可通关性仿真</button>
+          </div>
+          <div id="simulate-panel" class="panel-box">—</div>
+        </section>
+
+        <section>
+          <h3>操作</h3>
+          <div class="row">
+            <button id="btn-play" class="primary">▶ 试玩</button>
+            <button id="btn-save" class="primary">💾 保存</button>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <div id="modal-root"></div>
+    <div id="toast-root"></div>
+
+    <script type="module" src="/src/editor/editor-main.ts"></script>
+  </body>
+</html>

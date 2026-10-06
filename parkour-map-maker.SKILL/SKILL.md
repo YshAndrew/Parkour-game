@@ -1,6 +1,6 @@
 ---
 name: parkour-map-maker
-description: 为「像素跑酷 Pixel Parkour」（Phaser 3 + TypeScript + Vite）项目设计、编写并校验 ASCII 文本关卡地图。当用户要求「做地图 / 加一关 / 设计新关卡 / 写一张图 / 扩展关卡」等涉及向 src/levels/maps/ 添加 .ts 地图文件时使用。覆盖完整流程：关卡构思、用字符表绘制 grid、按物理手感换算安全距离、生成 LevelData 文件、运行 check:maps 结构校验与可通关性仿真、修复失败项。
+description: 为「像素跑酷 Pixel Parkour」（Phaser 3 + TypeScript + Vite）项目设计、编写并校验 ASCII 文本关卡地图。当用户要求「做地图 / 加一关 / 设计新关卡 / 写一张图 / 扩展关卡 / 自动生成地图 / 批量出图」等涉及向 src/levels/maps/ 添加 .ts 地图文件时使用。覆盖完整流程：关卡构思、用字符表绘制 grid、按物理手感换算安全距离、生成 LevelData 文件、用 scripts/gen-map.mjs 自动生成（难度系数控制冗余，算法保证理论可通关）、运行 check:maps 结构校验与可通关性仿真、修复失败项。
 ---
 
 # 像素跑酷地图制作
@@ -12,7 +12,8 @@ description: 为「像素跑酷 Pixel Parkour」（Phaser 3 + TypeScript + Vite�
 - 项目根目录 = 当前会话的主项目目录（已打开的 Parkour-game）。
 - 动手前先读：`src/core/map-format.ts`（字符表与解析器）、`src/core/config.ts`（手感参数）。
 - 参考现有图：`src/levels/maps/01-tutorial.ts`（最简模板）。
-- 校验脚本口径：`scripts/validate-maps.mjs`（结构）、`scripts/simulate.mjs`（可通关性）。
+- 校验口径：`scripts/validate-maps.mjs`（结构，薄壳 → `src/core/validate.ts` 的 `validateGrid`）、`scripts/simulate.mjs`（可通关性，薄壳 → `src/core/simulate.ts` 的 `simulateGrid`）。
+- 自动生成：`scripts/gen-map.mjs`（v2，算法保证理论可通关，支持尖刺与难度系数）——见下方「自动生成」一节。
 
 ## 工作流
 
@@ -20,7 +21,7 @@ description: 为「像素跑酷 Pixel Parkour」（Phaser 3 + TypeScript + Vite�
 2. **确定文件名与 id**：文件名前缀决定选关顺序，用两位数字编号（`04-my-level.ts`）；`meta.id` 全局唯一（存档 key），不要与现有图重复。先 `Get-ChildItem src/levels/maps` 确认下一个编号与已有 id。
 3. **设计网格**：在草稿上按"逐行字符串"绘制，遵守下面的物理约束与硬性规则。每行长度可以不同，解析时按最长行补 `.`，宽度取最长行。
 4. **生成 `.ts` 文件**：用下方模板，改 `meta` 与 `grid`。
-5. **校验**：`npm run check:maps`（= validate + simulate 两段）。必须全部 ✓。
+5. **校验**：`npm run check:maps`（= validate + simulate 两段）。**结构段必须全部 ✓**；simulate 段作参考——含尖刺的图可能报 bot 死亡（bot 决策局限，理论可过即算通过，见下方「自动生成」）。
 6. **修复并交付**：有 ✗ 就按报错定位格子修正后重跑；通过后报告文件名、尺寸、用了哪些机关。
 
 ## 字符表
@@ -78,7 +79,32 @@ const level: LevelData = {
 export default level;
 ```
 
-模板已通过 `check:maps`（结构 + 可通关性双 ✓）。逐格拆解：`S` 在 (1,2) 站于地面；`^^^` 是 3 格宽的尖刺（坐在地面上，跳得过去）；`E` 在最右列贴地，bot 落地即触发。照这个骨架加长、加机关即可。
+模板已通过 `check:maps` 结构校验。逐格拆解：`S` 在 (1,2) 站于地面；`^^^` 是 3 格宽的尖刺（坐在地面上，跳得过去）；`E` 在最右列贴地，bot 落地即触发。照这个骨架加长、加机关即可。
+
+## 自动生成（可作起点或批量生产）
+
+不想从零画图时，直接用项目自带生成器 `scripts/gen-map.mjs`（v2：算法保证**理论可通关**、支持**尖刺**、难度系数控制冗余）：
+
+```bash
+node scripts/gen-map.mjs -d 0.5                  # 默认难度 0.5，自动编号输出到 src/levels/maps
+node scripts/gen-map.mjs -d 0.85 -l 100 -n "熔岩试炼" -t cave
+node scripts/gen-map.mjs -d 0.3 --seed 42        # 同种子可复现同一张图
+node scripts/gen-map.mjs -d 0.7 -c 3             # 批量生成 3 张
+node scripts/gen-map.mjs --out-dir <目录>        # 指定输出目录
+node scripts/gen-map.mjs --no-simulate           # 只做结构 + 理论验证，不跑仿真
+```
+
+- **通过标准（三层）**：结构校验（复用 `src/core/validate.ts`：S/E/落脚/坐实心）→ 理论可达性（坑宽≤6、尖刺宽≤4 且前后平地≥runway、弹跳板落点安全）→ 仿真仅作信息性报告。生成器会自动重试种子，优先挑 bot 零死亡的布局；找不到则以理论可过的为准。
+- **难度系数控制冗余**（0.05~1.0，难度越高容错越少）：
+
+| 系数 | 坑宽 | 尖刺 | 助跑 | 辅助机关 |
+| --- | --- | --- | --- | --- |
+| 0.1~0.3 | 1~3 格 | 1 格、稀疏 | 7 格 | 单向/移动平台多、检查点密 |
+| 0.4~0.6 | 3~5 格 | 2 格 | 5 格 | 机关渐少 |
+| 0.7~1.0 | 5~6 格 | 3~4 格、密集 | 3 格 | 少，靠极限跑跳 |
+
+- **衔接手动设计**：生成的图是"可通关骨架"（地面带 + 坑 + 尖刺），适合先自动生成、再手动补主题机关（金币串、装饰 `-`、移动平台当可选路）与改 `meta`。参考 `references/design-guide.md` 的「自动生成 → 手动微调」。
+- **已知局限（勿误判为失败）**：simulate bot 对平地尖刺有决策死区（固定步长起跳），高难度图 bot 可能失败——这是 bot 局限，不代表图不可通关；项目官方 07 号图亦如此。
 
 ## 交付
 

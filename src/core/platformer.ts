@@ -4,8 +4,8 @@
  * 使用方式：每帧调用 `step(input, dt, world)`，内部维护 coyote / buffer / dash / wall 状态机。
  */
 
-import { PLAYER, GRAVITY, MAX_FALL } from './config';
-import { TILE } from './config';
+import { PLAYER, GRAVITY, MAX_FALL } from './config.ts';
+import { TILE } from './config.ts';
 
 export interface Rect {
   x: number;
@@ -290,5 +290,10 @@ export class Platformer {
   }
   get tileY() {
     return Math.floor(this.cy / TILE);
+  }
+
+  /** 剩余空中跳（二段跳）次数；仿真 bot 判断是否需要救援时使用 */
+  get remainingAirJumps() {
+    return this.airJumpsLeft;
   }
 }
