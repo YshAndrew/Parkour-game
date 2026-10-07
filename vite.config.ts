@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import type { Plugin } from 'vite';
 import { fileURLToPath } from 'node:url';
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
 import { existsSync, readdirSync, writeFileSync } from 'node:fs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
@@ -84,7 +84,8 @@ function saveMapPlugin(): Plugin {
             return;
           }
           const target = resolve(mapsDir, filename);
-          if (target !== resolve(mapsDir, filename) || !target.startsWith(mapsDir)) {
+          // 双重防御：白名单已排除路径穿越，这里再校验一次解析后的真实路径
+          if (!target.startsWith(mapsDir + sep)) {
             writeJson(res, 400, { error: '路径越界' });
             return;
           }
