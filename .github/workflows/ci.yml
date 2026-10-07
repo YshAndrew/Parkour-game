@@ -1,0 +1,41 @@
+# 地图与构建校验（Pull Request 自动运行）
+#
+# 提交 PR 后自动校验：结构硬性门禁 + 可通关性仿真参考 + 构建验证。
+# 地图 = src/levels/maps/ 下一个 .ts 文件，import.meta.glob 自动注册，
+# 因此 PR 只需保证新图结构合法、不破坏编译即可。
+
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: 校验地图与构建
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      # 结构校验：硬性门禁——S/E 数量、落脚、坐实心等，错一处即标红
+      - name: 地图结构校验（硬性）
+        run: node scripts/validate-maps.mjs
+
+      # 可通关性仿真：参考项不阻断合并（bot 决策有局限，如平地尖刺死区，
+      # 以作者在编辑器里的试玩为准；个别图仿真红属预期，不算失败）
+      - name: 地图可通关性仿真（参考）
+        run: node scripts/simulate.mjs || true
+
+      # 构建验证：确保新增地图不破坏 TypeScript 编译与打包
+      - name: 构建
+        run: npm run build

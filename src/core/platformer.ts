@@ -2,10 +2,17 @@
  * 平台跳跃手感核心 —— 纯逻辑、与渲染解耦，便于单元测试。
  *
  * 使用方式：每帧调用 `step(input, dt, world)`，内部维护 coyote / buffer / dash / wall 状态机。
+ *
+ * 冲刺（Celeste 式）：
+ *  - 8 向方向键制：按方向键决定冲刺方向（对角归一化），无方向则沿 facing 水平冲
+ *  - 充能制：默认每段滞空 1 次冲刺，触地 / 触墙恢复；设置开"二段冲刺"则为 2 次
+ *  - 下冲触地 = 超级冲刺（沿 facing 向前弹射）
+ *  - 二段跳由设置开关（默认关）
  */
 
 import { PLAYER, GRAVITY, MAX_FALL } from './config.ts';
 import { TILE } from './config.ts';
+import { Settings } from './settings.ts';
 
 export interface Rect {
   x: number;
@@ -26,6 +33,7 @@ export interface Body extends Rect {
 export interface FrameInput {
   left: boolean;
   right: boolean;
+  up: boolean;
   jumpHeld: boolean;
   jumpPressed: boolean;
   dashPressed: boolean;
@@ -41,8 +49,6 @@ export interface World {
 
 export type PlayerState = 'idle' | 'run' | 'air' | 'wall-slide' | 'dash' | 'dead' | 'win';
 
-const AIR_JUMPS = PLAYER.doubleJump ? 1 : 0;
-
 export class Platformer {
   body: Body;
   state: PlayerState = 'idle';
@@ -50,10 +56,11 @@ export class Platformer {
 
   private coyote = 0;
   private jumpBuf = 0;
-  private airJumpsLeft = AIR_JUMPS;
+  private airJumpsLeft = 0;
+  private dashCharges = 1;
   private dashTimer = 0;
-  private dashCooldown = 0;
-  private dashDir: 1 | -1 = 1;
+  private dashDX = 0; // 归一化冲刺方向
+  private dashDY = 0;
   private justLanded = false;
   private justWallJumped = false;
   private justJumped = false;
@@ -73,6 +80,15 @@ export class Platformer {
     };
   }
 
+  /** 二段跳次数（设置开关，默认关） */
+  private get maxAirJumps() {
+    return Settings.data.doubleJump ? 1 : 0;
+  }
+  /** 冲刺充能上限（设置开关"二段冲刺"，默认 1 次/段滞空） */
+  private get maxDashCharges() {
+    return Settings.data.doubleDash ? 2 : 1;
+  }
+
   respawn(x: number, y: number) {
     this.body.x = x - this.body.w / 2;
     this.body.y = y - this.body.h / 2;
@@ -82,7 +98,8 @@ export class Platformer {
     this.coyote = 0;
     this.jumpBuf = 0;
     this.dashTimer = 0;
-    this.airJumpsLeft = AIR_JUMPS;
+    this.airJumpsLeft = this.maxAirJumps;
+    this.dashCharges = this.maxDashCharges;
   }
 
   get cx() {
@@ -105,11 +122,15 @@ export class Platformer {
 
     this.coyote -= dt;
     this.jumpBuf -= dt;
-    this.dashCooldown -= dt;
+    this.dashTimer -= dt;
+
+    // 冲刺充能恢复：触地 / 触墙（Celeste 式）
+    if (b.onGround || b.onWall) this.dashCharges = this.maxDashCharges;
 
     if (input.jumpPressed) this.jumpBuf = PLAYER.jumpBuffer;
-    if (input.dashPressed && this.dashCooldown <= 0 && this.dashTimer <= 0) {
+    if (input.dashPressed && this.dashCharges > 0 && this.dashTimer <= 0) {
       this.startDash(input);
+      this.dashCharges--;
     }
 
     if (this.dashTimer > 0) {
@@ -176,36 +197,60 @@ export class Platformer {
     // ---------- 状态 ----------
     if (b.onGround) {
       this.coyote = PLAYER.coyoteTime;
-      this.airJumpsLeft = AIR_JUMPS;
+      this.airJumpsLeft = this.maxAirJumps;
       this.state = Math.abs(b.vx) > 10 ? 'run' : 'idle';
     } else if (b.onWall) {
       this.state = 'wall-slide';
-      this.airJumpsLeft = Math.max(this.airJumpsLeft, 1);
     } else {
       this.state = 'air';
     }
   }
 
+  /** 方向键制冲刺：读取按住的方向键决定方向；无方向则沿 facing 水平冲 */
   private startDash(input: FrameInput) {
     let dx = 0;
-    if (input.left) dx = -1;
-    if (input.right) dx = 1;
-    this.dashDir = (dx || this.facing) as 1 | -1;
+    let dy = 0;
+    if (input.left) dx -= 1;
+    if (input.right) dx += 1;
+    if (input.up) dy -= 1;
+    if (input.down) dy += 1;
+    if (dx === 0 && dy === 0) dx = this.facing; // 无方向 → 朝向
+
+    const len = Math.hypot(dx, dy);
+    this.dashDX = dx / len;
+    this.dashDY = dy / len;
     this.dashTimer = PLAYER.dashTime;
-    this.dashCooldown = PLAYER.dashCooldown + PLAYER.dashTime;
-    this.body.vx = this.dashDir * PLAYER.dashSpeed;
-    this.body.vy = 0;
+    this.body.vx = this.dashDX * PLAYER.dashSpeed;
+    this.body.vy = this.dashDY * PLAYER.dashSpeed;
     this.state = 'dash';
   }
 
   private stepDash(dt: number, world: World) {
     const b = this.body;
     this.dashTimer -= dt;
-    b.vy = 0;
-    b.vx = this.dashDir * PLAYER.dashSpeed;
+    b.vx = this.dashDX * PLAYER.dashSpeed;
+    b.vy = this.dashDY * PLAYER.dashSpeed;
     this.moveAndCollide(dt, world);
+
+    // 下冲触地 → 超级冲刺（结束冲刺并沿 facing 向前弹射）
+    if (this.dashDY > 0 && b.onGround) {
+      b.vx = this.facing * PLAYER.maxRunSpeed * PLAYER.superdashMult;
+      b.vy = 0;
+      this.dashTimer = 0;
+      this.state = b.onGround ? 'run' : 'air';
+      return;
+    }
+
     if (this.dashTimer <= 0) {
-      b.vx = this.dashDir * PLAYER.maxRunSpeed * 0.9;
+      if (this.dashDY === 0) {
+        // 水平冲刺：沿用原收尾（保留水平动量）
+        b.vx = this.dashDX * PLAYER.maxRunSpeed * 0.9;
+        b.vy = 0;
+      } else {
+        // 上/下/斜向：保留部分冲刺速度（上冲有小跳、下冲快速下坠）
+        b.vx = this.dashDX * PLAYER.dashSpeed * PLAYER.dashEndKeep;
+        b.vy = this.dashDY * PLAYER.dashSpeed * PLAYER.dashEndKeep;
+      }
       this.state = 'air';
     }
   }
@@ -290,10 +335,5 @@ export class Platformer {
   }
   get tileY() {
     return Math.floor(this.cy / TILE);
-  }
-
-  /** 剩余空中跳（二段跳）次数；仿真 bot 判断是否需要救援时使用 */
-  get remainingAirJumps() {
-    return this.airJumpsLeft;
   }
 }

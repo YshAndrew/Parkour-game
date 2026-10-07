@@ -281,6 +281,7 @@ export class PlayScene extends Phaser.Scene {
     const inp = {
       left: this.ctl.down('left'),
       right: this.ctl.down('right'),
+      up: this.ctl.down('up'),
       jumpHeld: this.ctl.down('jump'),
       jumpPressed: this.ctl.just('jump'),
       dashPressed: this.ctl.just('dash'),

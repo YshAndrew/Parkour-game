@@ -1,9 +1,12 @@
 /**
- * DOM UI 控制器 —— 菜单、暂停、结算覆盖层
+ * DOM UI 控制器 —— 菜单、暂停、结算、设置覆盖层
  */
 
 import { LevelRegistry } from '../levels/registry';
 import { Save } from '../core/save-data';
+import { Settings } from '../core/settings';
+import { KEYMAP, refreshKeymap } from '../core/controls';
+import type { Action } from '../core/controls';
 
 const hud = document.getElementById('hud') as HTMLElement;
 const overlay = document.getElementById('overlay') as HTMLElement;
@@ -12,6 +15,21 @@ const levelTitle = document.getElementById('hud-level') as HTMLElement;
 const coinText = document.getElementById('hud-coins') as HTMLElement;
 const deathText = document.getElementById('hud-deaths') as HTMLElement;
 const timeText = document.getElementById('hud-time') as HTMLElement;
+
+/** 设置页里键位行的中文标签 */
+const KEY_LABELS: Record<Action, string> = {
+  left: '左移',
+  right: '右移',
+  up: '上（方向）',
+  down: '下（方向）',
+  jump: '跳',
+  dash: '冲刺',
+  pause: '暂停',
+  restart: '重来',
+};
+
+/** 设置页内提示信息（重绑冲突等），下次渲染时展示 */
+let settingsMsg = '';
 
 export const UI = {
   init() {
@@ -48,18 +66,19 @@ export const UI = {
     UI.clearOverlay();
     const panel = UI.panel([
       UI.h1('像素跑酷'),
-      UI.p('空格 / 上 / W 跳跃    ←/→ / A/D 移动    Shift / Z 冲刺    下+跳 下平台'),
+      UI.p('C 跳    X 冲刺（按方向键决定冲哪）    ←→/↑↓ 或 A/D/W/S 移动    下+跳 下平台'),
       UI.controlsTable({
-        '跳:': 'Space / ↑ / W',
-        '走:': '← → / A D',
-        '冲刺:': 'Shift / Z',
+        '移动:': '← → ↑ ↓ / A D W S',
+        '跳:': 'C',
+        '冲刺:': 'X（按方向键决定冲哪）',
         '下平台:': '↓ + 跳',
         '暂停:': 'Esc',
         '重来:': 'R',
       }),
       UI.btn('开始游戏', () => UI.emit('play-next')),
-      UI.btn('无限模式', () => UI.emit('play-infinity'), 'secondary'),
+      UI.btn('无限模式', UI.showInfinitySelect, 'secondary'),
       UI.btn('选关', UI.showLevelSelect, 'secondary'),
+      UI.btn('设置', () => UI.showSettings(UI.showTitle), 'secondary'),
       UI.btn('地图编辑器', () => {
         window.location.href = './editor.html';
       }, 'secondary'),
@@ -89,6 +108,76 @@ export const UI = {
     }
 
     panel.appendChild(UI.btn('返回', UI.showTitle, 'secondary'));
+    overlay.appendChild(panel);
+  },
+
+  // ---------- 无限模式难度选单 ----------
+
+  showInfinitySelect() {
+    UI.clearOverlay();
+    const panel = UI.panel([
+      UI.h1('无限模式'),
+      UI.p('选择起始难度（之后每关 +0.05 递增）'),
+      UI.btn('轻松（0.2）', () => UI.emit('play-infinity', 0.2)),
+      UI.btn('普通（0.5）', () => UI.emit('play-infinity', 0.5)),
+      UI.btn('困难（0.75）', () => UI.emit('play-infinity', 0.75)),
+      UI.btn('极限（1.0）', () => UI.emit('play-infinity', 1.0), 'secondary'),
+      UI.btn('返回', UI.showTitle, 'secondary'),
+    ]);
+    overlay.appendChild(panel);
+  },
+
+  // ---------- 设置 ----------
+
+  showSettings(back: () => void) {
+    UI.clearOverlay();
+    const panel = UI.panel([
+      UI.h1('设置'),
+      UI.div('settings-section', '<h2>键位（点击按键重新绑定，Esc 取消）</h2>'),
+    ]);
+
+    const keyRows = document.createElement('div');
+    keyRows.className = 'settings-rows';
+    for (const action of Object.keys(KEYMAP) as Action[]) {
+      const row = document.createElement('div');
+      row.className = 'key-row';
+      const label = document.createElement('span');
+      label.textContent = KEY_LABELS[action];
+      const btn = document.createElement('button');
+      btn.className = 'key-bind';
+      btn.textContent = KEYMAP[action][0];
+      btn.addEventListener('click', () => beginRebind(action, btn, back));
+      row.append(label, btn);
+      keyRows.appendChild(row);
+    }
+    panel.appendChild(keyRows);
+    panel.appendChild(
+      UI.btn('恢复默认键位', () => {
+        Settings.resetKeymap();
+        refreshKeymap();
+        UI.showSettings(back);
+      }, 'secondary'),
+    );
+
+    const diffSection = UI.div('settings-section', '<h2>难度</h2>');
+    diffSection.appendChild(
+      makeToggle('二段跳（滞空时可再跳一次）', Settings.data.doubleJump, (v) => {
+        Settings.setDoubleJump(v);
+      }),
+    );
+    diffSection.appendChild(
+      makeToggle('二段冲刺（滞空时可冲刺两次）', Settings.data.doubleDash, (v) => {
+        Settings.setDoubleDash(v);
+      }),
+    );
+    panel.appendChild(diffSection);
+
+    if (settingsMsg) {
+      const msg = UI.div('settings-msg', settingsMsg);
+      settingsMsg = '';
+      panel.appendChild(msg);
+    }
+    panel.appendChild(UI.btn('返回', back, 'secondary'));
     overlay.appendChild(panel);
   },
 
@@ -131,6 +220,7 @@ export const UI = {
         onResume();
       }),
       UI.btn('重来', () => UI.emit('restart')),
+      UI.btn('设置', () => UI.showSettings(() => UI.showPause(onResume))),
       UI.btn('回菜单', () => UI.emit('go-menu')),
     ]);
     overlay.appendChild(panel);
@@ -251,3 +341,61 @@ export const UI = {
     UI.listeners.get(event)?.forEach((f) => f(data));
   },
 };
+
+// ---------- 设置页内部 ----------
+
+/** 点击键位行进入"按任意键…"监听态 */
+function beginRebind(action: Action, btn: HTMLButtonElement, back: () => void) {
+  btn.textContent = '按任意键…';
+  btn.classList.add('listening');
+  const handler = (e: KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.removeEventListener('keydown', handler);
+    btn.classList.remove('listening');
+
+    if (e.key === 'Escape') {
+      settingsMsg = '';
+      UI.showSettings(back);
+      return;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey || ['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+      settingsMsg = '不支持修饰键/组合键，请按一个普通键';
+      UI.showSettings(back);
+      return;
+    }
+    const code = e.code;
+    const conflict = (Object.keys(KEYMAP) as Action[]).find(
+      (a) => a !== action && KEYMAP[a].includes(code),
+    );
+    if (conflict) {
+      settingsMsg = `「${code}」已被「${KEY_LABELS[conflict]}」占用，请换一个键`;
+      UI.showSettings(back);
+      return;
+    }
+    settingsMsg = '';
+    Settings.setKey(action, code);
+    refreshKeymap();
+    UI.showSettings(back);
+  };
+  window.addEventListener('keydown', handler);
+}
+
+/** 开关行（难度设置） */
+function makeToggle(label: string, on: boolean, onChange: (v: boolean) => void) {
+  const row = document.createElement('div');
+  row.className = 'toggle-row';
+  const lbl = document.createElement('span');
+  lbl.textContent = label;
+  const sw = document.createElement('button');
+  sw.className = 'switch' + (on ? ' on' : '');
+  sw.setAttribute('aria-pressed', String(on));
+  sw.addEventListener('click', () => {
+    const v = !on;
+    sw.classList.toggle('on', v);
+    sw.setAttribute('aria-pressed', String(v));
+    onChange(v);
+  });
+  row.append(lbl, sw);
+  return row;
+}

@@ -19,10 +19,12 @@ export const PLAYER = {
   wallJumpVSpeed: -380,
   coyoteTime: 0.09, // 秒
   jumpBuffer: 0.1, // 秒
-  doubleJump: true,
   dashSpeed: 420,
   dashTime: 0.14,
-  dashCooldown: 0.4,
+  /** 冲刺结束保留的冲刺速度比例（非水平冲的收尾） */
+  dashEndKeep: 0.6,
+  /** 下冲触地弹射（超级冲刺）的水平速度倍率（相对 maxRunSpeed） */
+  superdashMult: 1.6,
   wallSlideSpeed: 120,
 } as const;
 

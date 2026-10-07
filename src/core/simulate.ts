@@ -6,9 +6,9 @@
  * scripts/simulate.mjs 共用这一份逻辑 —— 同一份物理、同一份 bot。
  *
  * 已知简化（与 scripts/simulate.mjs 历史行为一致）：
- *  - 移动平台 M / m 按“停在中心位置”的静态实体处理（关卡设计上它们是可选路线）。
- *  - bot 会尝试“走路 / 短跳 / 中跳 / 满跳”几种策略，选落点最靠前且安全的那个，
- *    并在空中下落时自动补二段跳（救援）；撞墙时用蹬墙跳。
+ *  - 移动平台 M / m 按”停在中心位置”的静态实体处理（关卡设计上它们是可选路线）。
+ *  - bot 会尝试”走路 / 短跳 / 中跳 / 满跳 / 冲刺跳”几种策略，选落点最靠前且安全的那个，
+ *    并在空中下落遇险时按方向键冲刺救场（二段跳默认关闭）；撞墙时用蹬墙跳。
  */
 
 import { PLAYER, TILE } from './config.ts';
@@ -96,7 +96,23 @@ function buildWorld(rows: string[]): World {
           }
       return top;
     },
-    hazardAt: (r) => hits(r, (c) => c === '^' || c === '~'),
+    hazardAt: (r) => {
+      // 与 GameScene.checkHazards 同口径：尖刺只取下方 8px、岩浆取下方 12px（避免整格误判）
+      const x0 = Math.floor(r.x / TILE);
+      const y0 = Math.floor(r.y / TILE);
+      const x1 = Math.floor((r.x + r.w - 0.01) / TILE);
+      const y1 = Math.floor((r.y + r.h - 0.01) / TILE);
+      const overlap = (x: number, y: number, w: number, h: number) =>
+        r.x < x + w && r.x + r.w > x && r.y < y + h && r.y + r.h > y;
+      for (let y = y0; y <= y1; y++) {
+        for (let x = x0; x <= x1; x++) {
+          const c = at(x, y);
+          if (c === '^' && overlap(x * TILE + 2, y * TILE + 8, TILE - 4, TILE - 8)) return true;
+          if (c === '~' && overlap(x * TILE, y * TILE + 4, TILE, TILE - 4)) return true;
+        }
+      }
+      return false;
+    },
     bounceAt: (r) => hits(r, (c) => c === 'B'),
     exits,
   };
@@ -125,10 +141,10 @@ const isDead = (p: Platformer) => p.state === 'dead';
 
 // ---------- bot：像人类一样“按需起跳”，优先最保守的可行策略 ----------
 
-/** 正在往坑里掉、且还有二段跳 → 补一次空中跳救场 */
+/** 正在往坑里掉、且还有冲刺充能 → 按方向键冲刺救场（替代原二段跳救场） */
 function wantRescue(p: Platformer, world: World) {
   const b = p.body;
-  if (b.onGround || b.vy <= 0 || p.remainingAirJumps <= 0) return false;
+  if (b.onGround || b.vy <= 0) return false;
   const below: Rect = { x: b.x, y: b.y + b.h + 2, w: b.w, h: 40 };
   return !world.isSolid(below) || world.hazardAt(below);
 }
@@ -139,9 +155,10 @@ function drive(p: Platformer, world: World, plan: Plan, f: number): FrameInput {
   return {
     left: false,
     right: true,
-    jumpHeld: rescue || f * DT < plan.hold,
-    jumpPressed: rescue || (plan.hold > 0 && f === 0),
-    dashPressed: !!plan.dash && f === 0,
+    up: false,
+    jumpHeld: f * DT < plan.hold,
+    jumpPressed: plan.hold > 0 && f === 0,
+    dashPressed: rescue || (!!plan.dash && f === 0),
     down: false,
   };
 }
@@ -203,7 +220,7 @@ function runBot(world: World, spawn: { x: number; y: number }) {
         if (!b.onGround && b.onWall) hitWall = true;
         stepPlayer(
           p,
-          { left: false, right: true, jumpHeld: false, jumpPressed: hitWall, dashPressed: false, down: false },
+          { left: false, right: true, up: false, jumpHeld: false, jumpPressed: hitWall, dashPressed: false, down: false },
           world,
         );
         if (touchExit()) reached = true;

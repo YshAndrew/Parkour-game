@@ -35,6 +35,8 @@ const infinity = {
   round: 0,
   deaths: 0,
   coins: 0,
+  /** 起始难度（设置页/难度选单传入），之后每关 +0.05 递增 */
+  baseDiff: 0.3,
   level: null as LevelData | null,
   label: '',
 };
@@ -62,10 +64,10 @@ function startLevel(index: number) {
   launchLevel({ levelIndex: index }, LevelRegistry.get(index).name);
 }
 
-/** 无限模式：生成一张随机关卡并开始（难度随轮数递增） */
+/** 无限模式：生成一张随机关卡并开始（难度从起始值逐关递增） */
 function loadInfinityLevel() {
   const round = infinity.round;
-  const diff = Math.min(1.0, 0.3 + round * 0.05);
+  const diff = Math.min(1.0, infinity.baseDiff + round * 0.05);
   let res = generateMap({ difficulty: diff, width: 80 });
   if (!res) res = generateMap({ difficulty: Math.max(0.2, diff - 0.1), width: 80 }); // 极小概率兜底
   if (!res) {
@@ -88,11 +90,12 @@ function loadInfinityLevel() {
   launchLevel({ level: infinity.level }, infinity.label);
 }
 
-function startInfinity() {
+function startInfinity(diff?: number) {
   infinityMode = true;
   infinity.round = 0;
   infinity.deaths = 0;
   infinity.coins = 0;
+  infinity.baseDiff = typeof diff === 'number' ? diff : 0.3;
   loadInfinityLevel();
 }
 
@@ -164,7 +167,7 @@ UI.on('play-next', (next?: number) =>
   startLevel(next ?? Math.min(Save.data.unlocked, LevelRegistry.count() - 1)),
 );
 UI.on('play-level', (index: number) => startLevel(index));
-UI.on('play-infinity', () => startInfinity());
+UI.on('play-infinity', (diff?: number) => startInfinity(diff));
 UI.on('infinity-next', () => {
   infinity.round++;
   loadInfinityLevel();

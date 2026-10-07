@@ -238,7 +238,7 @@ function updateStatus(extra = '') {
 function goPlay() {
   game.scene.stop('editor');
   game.scene.start('play', { rows: [...editorState.rows] });
-  toast('试玩中：方向键/AD 移动，空格/上/W 跳，Shift/Z 冲刺，Esc 返回编辑', '');
+  toast('试玩中：←→/↑↓ 或 AD/WS 移动，C 跳，X 冲刺，Esc 返回编辑', '');
 }
 
 function backToEditor() {
