@@ -7,7 +7,7 @@
  *
  * 已知简化（与 scripts/simulate.mjs 历史行为一致）：
  *  - 移动平台 M / m 不参与仿真（设计上它们是可选路线，按静态实体处理会误伤
- *    “实际上可通关”的地图；参考 src/scenes/GameScene.ts 的可移动平台逻辑）。
+ *    “实际上可通关”的地图；参考 src/scenes/LevelWorld.ts 的可移动平台逻辑）。
  *  - bot 会尝试”走路 / 短跳 / 中跳 / 满跳 / 冲刺跳”几种策略，选落点最靠前且安全的那个，
  *    并在空中下落遇险时按方向键冲刺救场（二段跳默认关闭）；撞墙时用蹬墙跳。
  *  - bot 会像人类一样”看到前方尖刺提前满跳”，并拒绝落在”尖刺前 1~2 格”的决策死区
@@ -115,9 +115,9 @@ function clonePlayer(p: Platformer): Platformer {
 function stepPlayer(p: Platformer, input: FrameInput, world: World) {
   p.step(input, DT, world);
   const b = p.body;
-  // 危险 / 弹跳（与 GameScene.checkHazards 一致的口径）
+  // 危险 / 弹跳（与 GameScene/LevelWorld checkHazards 一致的口径）
   if (world.bounceAt({ x: b.x, y: b.y + b.h - 8, w: b.w, h: 8 }) && b.vy >= 0) {
-    b.vy = -620;
+    b.vy = PLAYER.bounceVy;
     b.onGround = false;
   }
   if (world.hazardAt(b)) p.state = 'dead';
