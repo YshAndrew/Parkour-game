@@ -31,6 +31,10 @@ const KEY_LABELS: Record<Action, string> = {
 /** 设置页内提示信息（重绑冲突等），下次渲染时展示 */
 let settingsMsg = '';
 
+/** HUD 节流：每帧都收 game:tick，但只在数值变化或 ≥100ms 时才真正写 DOM */
+const hudCache = { ms: -1, deaths: -1, coins: -1, totalCoins: -1 };
+let hudLastWrite = 0;
+
 export const UI = {
   init() {
     UI.showOverlay();
@@ -190,12 +194,26 @@ export const UI = {
     coinText.textContent = '0 / 0';
     deathText.textContent = '0';
     timeText.textContent = '0.0s';
+    // 重置节流缓存，保证新关卡第一帧立即刷新
+    hudCache.ms = -1;
+    hudCache.deaths = -1;
+    hudCache.coins = -1;
+    hudCache.totalCoins = -1;
+    hudLastWrite = 0;
   },
   hideHUD() {
     hud.classList.add('hidden');
   },
 
   updateHUD({ ms, deaths, coins, totalCoins }: { ms: number; deaths: number; coins: number; totalCoins: number }) {
+    const now = performance.now();
+    const urgent = deaths !== hudCache.deaths || coins !== hudCache.coins || totalCoins !== hudCache.totalCoins;
+    if (!urgent && now - hudLastWrite < 100) return;
+    hudCache.ms = ms;
+    hudCache.deaths = deaths;
+    hudCache.coins = coins;
+    hudCache.totalCoins = totalCoins;
+    hudLastWrite = now;
     coinText.textContent = `${coins} / ${totalCoins}`;
     deathText.textContent = `${deaths}`;
     timeText.textContent = `${(ms / 1000).toFixed(1)}s`;
