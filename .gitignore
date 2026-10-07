@@ -1,0 +1,13 @@
+# 依赖与构建产物
+node_modules/
+dist/
+
+# 日志
+*.log
+
+# 编辑器 / 系统文件
+.DS_Store
+Thumbs.db
+
+# 生成器临时输出（未指定 --out-dir 时的兜底目录）
+maps-out/
