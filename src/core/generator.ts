@@ -84,6 +84,17 @@ function lerp(a: number, b: number, t: number) {
 function randInt(rng: () => number, lo: number, hi: number) {
   return lo + Math.floor(rng() * (hi - lo + 1));
 }
+/**
+ * 难度导向的整数分布：难度越高，越偏向区间的较大值。
+ * 用于让高难度（如 1.0）出现更多宽坑/宽尖刺，而不是均匀散布 1~6 的“简单坑”，
+ * 解决“玩 1.0 只感觉有一点难”的问题。低难度指数 >1 偏向小值（更简单）。
+ */
+function randIntBias(rng: () => number, lo: number, hi: number, diff: number) {
+  if (hi <= lo) return lo;
+  const span = hi - lo + 1;
+  const e = clamp(1.6 - diff, 0.4, 2.0);
+  return lo + Math.min(span - 1, Math.floor(Math.pow(rng(), e) * span));
+}
 /** mulberry32：可复现 PRNG */
 function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -195,7 +206,7 @@ function generateLayout(rng: () => number, p: GenParams, width: number): Layout 
     if (madeStep) continue;
 
     // 坑（同高）
-    const gapW = randInt(rng, 1, p.maxGap);
+    const gapW = randIntBias(rng, 1, p.maxGap, p.diff);
     const minW = Math.max(8, gapW + 4);
     if (x + gapW + minW + 14 > width) break;
     conns.push({ kind: 'gap', x0: x, w: gapW, row });
@@ -285,7 +296,7 @@ function renderGrid(layout: Layout, rng: () => number, p: GenParams, width: numb
     const canSpike = !isFirst && !isLast && rng() < p.spikeChance && seg.x1 - seg.x0 + 1 >= p.runway * 2 + 2;
     if (canSpike) {
       const maxW = Math.min(p.spikeW, seg.x1 - seg.x0 + 1 - p.runway * 2);
-      const W = randInt(rng, 1, Math.max(1, maxW));
+      const W = randIntBias(rng, 1, Math.max(1, maxW), p.diff);
       const sx = randInt(rng, seg.x0 + p.runway, seg.x1 - p.runway - W + 1);
       let ok = true;
       for (let k = 0; k < W; k++) if (g[objRow][sx + k] !== '.') ok = false;

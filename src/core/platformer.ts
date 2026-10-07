@@ -330,6 +330,11 @@ export class Platformer {
     return v;
   }
 
+  /** 清空跳跃缓冲（bot 决策前后调用，避免上一次未消费的输入污染下一次决策） */
+  clearJumpBuffer() {
+    this.jumpBuf = 0;
+  }
+
   get tileX() {
     return Math.floor(this.cx / TILE);
   }

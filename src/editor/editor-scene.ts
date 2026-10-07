@@ -5,7 +5,7 @@
 import Phaser from 'phaser';
 import { TILE } from '../core/config.ts';
 import { getCell, setCell, snapshotForUndo, undo, width, height, subscribe } from './state.ts';
-import { paintGridTile } from './tile-painter.ts';
+import { tileColor } from './tile-painter.ts';
 
 export class EditorScene extends Phaser.Scene {
   private gfx!: Phaser.GameObjects.Graphics;
@@ -20,6 +20,8 @@ export class EditorScene extends Phaser.Scene {
   private panStart = { x: 0, y: 0 };
   private lastCell = { x: -1, y: -1 };
   private unsub: (() => void) | null = null;
+  /** 每帧最多新建的 Text 数（分批渲染，避免大图一次性创建上千 Text 卡死） */
+  private static readonly CHARS_PER_FRAME = 200;
 
   constructor() {
     super('editor');
@@ -218,46 +220,71 @@ export class EditorScene extends Phaser.Scene {
     for (let x = 0; x <= width(); x++) gfx.lineBetween(x * TILE, 0, x * TILE, height() * TILE);
     for (let y = 0; y <= height(); y++) gfx.lineBetween(0, y * TILE, width() * TILE, y * TILE);
 
-    // 瓦片色块
+    // 瓦片色块（按颜色批量设置样式，避免每格切换 fillStyle/lineStyle 的开销）
     const h = height();
     const w = width();
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const ch = getCell(x, y);
-        if (ch !== '.' && ch !== ' ') paintGridTile(gfx, x, y, ch);
-      }
-    }
-
-    // 字符叠加（复用 Text 对象池）
-    const liveKeys = new Set<string>();
+    const byColor = new Map<number, { x: number; y: number }[]>();
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const ch = getCell(x, y);
         if (ch === '.' || ch === ' ') continue;
-        const key = `${x},${y}`;
-        liveKeys.add(key);
-        let t = this.chars.get(key);
-        if (!t) {
-          t = this.add
-            .text(x * TILE + TILE / 2, y * TILE + TILE / 2, ch, {
-              fontFamily: 'Consolas, monospace',
-              fontSize: '9px',
-              color: '#ffffff',
-            })
-            .setOrigin(0.5)
-            .setDepth(5);
-          t.setStroke('#0b0e17', 2);
-          this.chars.set(key, t);
-        } else if (t.text !== ch) {
-          t.setText(ch);
-        }
+        const c = tileColor(ch);
+        if (c === 0) continue;
+        let arr = byColor.get(c);
+        if (!arr) byColor.set(c, (arr = []));
+        arr.push({ x, y });
       }
     }
+    for (const [c, cells] of byColor) {
+      gfx.fillStyle(c, 0.9);
+      gfx.lineStyle(1, 0x0b0e17, 0.9);
+      for (const { x, y } of cells) {
+        gfx.fillRect(x * TILE + 1, y * TILE + 1, TILE - 2, TILE - 2);
+        gfx.strokeRect(x * TILE + 1, y * TILE + 1, TILE - 2, TILE - 2);
+      }
+    }
+
+    // 字符叠加（复用 Text 对象池；新建分批进行，每帧最多 CHARS_PER_FRAME 个）
+    // 目标字符集：key → ch
+    const target = new Map<string, string>();
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const ch = getCell(x, y);
+        if (ch === '.' || ch === ' ') continue;
+        target.set(`${x},${y}`, ch);
+      }
+    }
+    // 移除已不存在/被覆盖的 Text
     for (const [key, t] of this.chars) {
-      if (!liveKeys.has(key)) {
+      if (!target.has(key)) {
         t.destroy();
         this.chars.delete(key);
+      } else if (t.text !== target.get(key)) {
+        t.setText(target.get(key)!);
       }
     }
+    // 收集需要新建的字符，每帧最多建 CHARS_PER_FRAME 个；有剩余 → 下帧继续（避免单帧卡死）
+    let budget = EditorScene.CHARS_PER_FRAME;
+    let remaining = 0;
+    for (const [key, ch] of target) {
+      if (this.chars.has(key)) continue;
+      if (budget <= 0) {
+        remaining++;
+        continue;
+      }
+      const [cx, cy] = key.split(',').map(Number);
+      const t = this.add
+        .text(cx * TILE + TILE / 2, cy * TILE + TILE / 2, ch, {
+          fontFamily: 'Consolas, monospace',
+          fontSize: '9px',
+          color: '#ffffff',
+        })
+        .setOrigin(0.5)
+        .setDepth(5);
+      t.setStroke('#0b0e17', 2);
+      this.chars.set(key, t);
+      budget--;
+    }
+    if (remaining > 0) this.dirty = true;
   }
 }

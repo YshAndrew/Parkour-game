@@ -1,0 +1,109 @@
+
+> pixel-parkour@1.0.0 dev
+> vite
+
+[2m18:26:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because lockfile has changed
+
+  [32m[1mVITE[22m v7.3.6[39m  [2mready in [0m[1m3502[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://172.30.144.1:[1m5173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.106:[1m5173[22m/[39m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[2m18:35:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m18:35:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m18:35:15[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m18:35:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m18:35:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m18:36:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/generator.ts[22m
+[2m18:36:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/generator.ts[22m
+[2m18:36:37[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/generator.ts[22m
+[2m18:51:56[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/platformer.ts[22m
+[2m18:52:04[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m18:52:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m18:56:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m18:56:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m19:00:53[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m19:01:54[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/generator.ts[22m
+[2m19:01:54[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m19:01:54[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/platformer.ts[22m
+[2m19:02:01[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/platformer.ts[22m
+[2m19:02:01[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m19:02:01[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/generator.ts[22m
+[2m19:17:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/generator.ts[22m
+[2m19:17:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/platformer.ts[22m
+[2m19:17:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/generator.ts[22m
+[2m19:17:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m19:17:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m19:17:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/generator.ts[22m
+[2m19:17:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/platformer.ts[22m
+[2m19:17:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/generator.ts[22m
+[2m19:17:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/platformer.ts[22m
+[2m19:20:49[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/core/simulate.ts[22m
+[2m19:46:51[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/play-scene.ts[22m
+[2m20:03:03[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/play-scene.ts[22m
+[2m20:03:17[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/play-scene.ts[22m
+[2m20:03:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/play-scene.ts[22m
+[2m20:06:31[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/play-scene.ts[22m
+[2m20:10:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/play-scene.ts[22m
+[2m20:24:07[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/editor-scene.ts[22m
+[2m20:24:22[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/editor-scene.ts[22m
+[2m20:24:22[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 2 errors:
+D:/files/code/Parkour-game/src/editor/editor-scene.ts:236:10: ERROR: The symbol "h" has already been declared
+D:/files/code/Parkour-game/src/editor/editor-scene.ts:237:10: ERROR: The symbol "w" has already been declared
+  Plugin: [35mvite:esbuild[39m
+  File: [36mD:/files/code/Parkour-game/src/editor/editor-scene.ts[39m:236:10
+[33m  
+  [33mThe symbol "h" has already been declared[33m
+  234 |  
+  235 |      // 字符叠加（复用 Text 对象池；新建分批进行，每帧最多 CHARS_PER_FRAME 个）
+  236 |      const h = height();
+      |            ^
+  237 |      const w = width();
+  238 |      // 目标字符集：key → ch
+  
+  [33mThe symbol "w" has already been declared[33m
+  235 |      // 字符叠加（复用 Text 对象池；新建分批进行，每帧最多 CHARS_PER_FRAME 个）
+  236 |      const h = height();
+  237 |      const w = width();
+      |            ^
+  238 |      // 目标字符集：key → ch
+  239 |      const target = new Map<string, string>();
+  [39m
+[2m20:24:22[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 2 errors:
+D:/files/code/Parkour-game/src/editor/editor-scene.ts:236:10: ERROR: The symbol "h" has already been declared
+D:/files/code/Parkour-game/src/editor/editor-scene.ts:237:10: ERROR: The symbol "w" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mD:/files/code/Parkour-game/src/editor/editor-scene.ts[39m:236:10
+[33m  
+  [33mThe symbol "h" has already been declared[33m
+  234 |  
+  235 |      // 字符叠加（复用 Text 对象池；新建分批进行，每帧最多 CHARS_PER_FRAME 个）
+  236 |      const h = height();
+      |            ^
+  237 |      const w = width();
+  238 |      // 目标字符集：key → ch
+  
+  [33mThe symbol "w" has already been declared[33m
+  235 |      // 字符叠加（复用 Text 对象池；新建分批进行，每帧最多 CHARS_PER_FRAME 个）
+  236 |      const h = height();
+  237 |      const w = width();
+      |            ^
+  238 |      // 目标字符集：key → ch
+  239 |      const target = new Map<string, string>();
+  [39m
+      at failureErrorWithLog (D:\files\code\Parkour-game\node_modules\esbuild\lib\main.js:1752:15)
+      at D:\files\code\Parkour-game\node_modules\esbuild\lib\main.js:1019:50
+      at responseCallbacks.<computed> (D:\files\code\Parkour-game\node_modules\esbuild\lib\main.js:886:9)
+      at handleIncomingPacket (D:\files\code\Parkour-game\node_modules\esbuild\lib\main.js:941:12)
+      at Socket.readFromStdout (D:\files\code\Parkour-game\node_modules\esbuild\lib\main.js:864:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m20:24:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/editor-scene.ts[22m
+[2m20:28:56[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/editor-scene.ts[22m
+[2m20:29:07[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/editor-scene.ts[22m
+[2m20:32:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/editor-scene.ts[22m
+[2m20:32:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/editor/editor-scene.ts[22m

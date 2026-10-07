@@ -36,6 +36,8 @@ interface Mover {
   speed: number;
   t: number;
   dx: number;
+  /** 上一帧是否载着玩家（持续乘坐判定用） */
+  carrying?: boolean;
 }
 
 export class GameScene extends Phaser.Scene {
@@ -137,13 +139,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private isSolid = (r: Rect) => {
-    if (this.rectHitsGrid(r, this.solids)) return true;
-    for (const m of this.movers) {
-      if (r.x < m.rect.x + m.rect.w && r.x + r.w > m.rect.x && r.y < m.rect.y + m.rect.h && r.y + r.h > m.rect.y) {
-        return true;
-      }
-    }
-    return false;
+    // 只判定静态网格：移动平台是单向平台，不做实体碰撞（否则会被顶/压穿模）
+    return this.rectHitsGrid(r, this.solids);
   };
 
   private oneWayTop = (r: Rect): number | null => {
@@ -160,6 +157,8 @@ export class GameScene extends Phaser.Scene {
         }
       }
     }
+    // 移动平台不参与单向落脚判定：落脚完全由 updateMovers 的载人判定负责
+    // （单向实体碰撞已移除，平台体会从玩家身上扫过而不产生 push-out）
     return top;
   };
 
@@ -431,20 +430,27 @@ export class GameScene extends Phaser.Scene {
       m.rect.y = ny - m.rect.h / 2;
       m.gfx.setPosition(nx, ny);
 
-      // 载人：玩家脚底贴着平台顶面
+      // 载人：只有“正在乘坐本平台”或“正下落落在平台上”才算踩上，防止平台从下方/侧向
+      // 顶进角色时把站地上的玩家“偷”上平台（头顶穿模的根因）。
       const b = this.player.body;
       const feet = b.y + b.h;
+      const wasCarried = m.carrying === true;
+      const horizontallyOn = b.x + b.w > m.rect.x && b.x < m.rect.x + m.rect.w;
+      const centerOver = b.x + b.w / 2 > m.rect.x && b.x + b.w / 2 < m.rect.x + m.rect.w;
       const onTop =
         feet >= m.rect.y - 3 &&
         feet <= m.rect.y + 5 &&
-        b.x + b.w > m.rect.x &&
-        b.x < m.rect.x + m.rect.w &&
-        b.vy >= 0;
+        horizontallyOn &&
+        b.vy >= 0 &&
+        (wasCarried || (!b.onGround && b.vy > 60 && centerOver));
       if (onTop) {
         b.x += m.dx;
         b.y = m.rect.y - b.h;
         b.vy = 0;
         b.onGround = true;
+        m.carrying = true;
+      } else {
+        m.carrying = false;
       }
     }
   }
