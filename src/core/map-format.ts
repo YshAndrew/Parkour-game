@@ -67,7 +67,8 @@ export interface ParsedLevel extends LevelMeta {
 }
 
 export function parseLevel(data: LevelData): ParsedLevel {
-  const width = Math.max(...data.grid.map((r) => r.length));
+  // 空网格防御：Math.max() 无参返回 -Infinity，会污染后续尺寸计算
+  const width = Math.max(0, ...data.grid.map((r) => r.length));
   const height = data.grid.length;
   const grid: TileKind[][] = [];
   let spawn = standPos(1, 1);
@@ -78,7 +79,8 @@ export function parseLevel(data: LevelData): ParsedLevel {
     const row: TileKind[] = [];
     for (let x = 0; x < width; x++) {
       const ch = data.grid[y][x] ?? '.';
-      const kind = (LEGEND as Record<string, TileKind>)[ch] ?? 'empty';
+      // 替换双重断言：未知字符一律按 'empty' 处理，不再走 as unknown as
+      const kind = LEGEND[ch as keyof typeof LEGEND] ?? 'empty';
       row.push(kind);
       if (kind === 'spawn') spawn = standPos(x, y);
       if (kind === 'exit') exits.push({ x: x * TILE + TILE / 2, y: y * TILE + TILE / 2 });
