@@ -415,7 +415,8 @@ function theoreticalCheck(layout: Layout, p: GenParams, placed: Placed, width: n
 export function generateMap(opts: GenOptions = {}): GenResult | null {
   const diff = clamp(opts.difficulty ?? 0.5, 0.05, 1.0);
   const p = difficultyParams(diff);
-  const width = Math.max(48, opts.width ?? 80);
+  // 宽度取整防御（编辑器/CLI 已传整数，防止异常输入产生非法 Array 长度）
+  const width = Math.max(48, Math.floor(opts.width ?? 80));
   const doSim = opts.simulate ?? true;
   const baseSeed = opts.seed ?? Math.floor(Math.random() * 1e9);
 
