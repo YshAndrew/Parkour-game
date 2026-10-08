@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "check:maps": "node scripts/validate-maps.mjs && node scripts/simulate.mjs",
     "check:gen": "node scripts/stress-gen.mjs",
-    "gen:map": "node scripts/gen-map.mjs"
+    "gen:map": "node scripts/gen-map.mjs",
+    "check": "npm run check:maps && npm run check:gen && npm run build"
   },
   "dependencies": {
     "phaser": "^3.90.0"

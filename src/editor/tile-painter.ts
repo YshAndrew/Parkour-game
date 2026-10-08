@@ -1,6 +1,6 @@
 /**
  * 瓦片渲染：编辑器网格视图与试玩视图共用。
- *  - paintGridTile：编辑模式，清晰色块（配合字符叠加层）
+ *  - tileColor：编辑模式每个字符的色块颜色（编辑器场景按颜色批量绘制）
  *  - paintPlayTile：试玩模式，与 GameScene 视觉一致
  */
 
@@ -39,18 +39,6 @@ export function tileColor(ch: string): number {
     default:
       return 0;
   }
-}
-
-/** 编辑模式：绘制一格（空气不画） */
-export function paintGridTile(gfx: Phaser.GameObjects.Graphics, x: number, y: number, ch: string) {
-  if (ch === '.' || ch === ' ') return;
-  const px = x * TILE;
-  const py = y * TILE;
-  const c = tileColor(ch);
-  gfx.fillStyle(c, 0.9);
-  gfx.fillRect(px + 1, py + 1, TILE - 2, TILE - 2);
-  gfx.lineStyle(1, 0x0b0e17, 0.9);
-  gfx.strokeRect(px + 1, py + 1, TILE - 2, TILE - 2);
 }
 
 /** 试玩模式：与 GameScene.buildTiles 一致的画法（rows 用于查上方是否实心） */
@@ -102,9 +90,6 @@ export function paintPlayTile(
       break;
   }
 }
-
-// 供 paintPlayTile 查“上方是否实心”：由场景注入当前 rows
-// （保留旧接口的兼容，编辑器试玩直接用 paintPlayTile(gfx,x,y,ch,rows)）
 
 /** 将解析后的 TileKind 网格还原成字符行（用于“载入现有关卡”） */
 import type { TileKind } from '../core/map-format.ts';

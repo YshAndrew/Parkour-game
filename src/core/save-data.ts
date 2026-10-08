@@ -26,7 +26,17 @@ const defaults = (): SaveData => ({
 function read(): SaveData {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? { ...defaults(), ...(JSON.parse(raw) as SaveData) } : defaults();
+    if (!raw) return defaults();
+    // 逐字段校验类型：损坏/过期格式的存档降级为默认值，避免运行时抛错
+    const parsed = JSON.parse(raw) as Partial<SaveData>;
+    return {
+      unlocked:
+        typeof parsed.unlocked === 'number' && Number.isFinite(parsed.unlocked) && parsed.unlocked >= 0
+          ? Math.floor(parsed.unlocked)
+          : 0,
+      levels: parsed.levels && typeof parsed.levels === 'object' ? (parsed.levels as SaveData['levels']) : {},
+      fullscreen: typeof parsed.fullscreen === 'boolean' ? parsed.fullscreen : false,
+    };
   } catch {
     return defaults();
   }

@@ -26,6 +26,10 @@ export const PLAYER = {
   /** 下冲触地弹射（超级冲刺）的水平速度倍率（相对 maxRunSpeed） */
   superdashMult: 1.6,
   wallSlideSpeed: 120,
+  /** 弹跳板触发的竖直初速度（游戏场景与仿真共用同一数值，避免手感漂移） */
+  bounceVy: -620,
+  /** 加速带把水平速度推到的倍率（相对 maxRunSpeed） */
+  boostMult: 1.6,
 } as const;
 
 export const CAMERA = {

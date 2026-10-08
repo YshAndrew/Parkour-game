@@ -4,10 +4,9 @@
  *
  * 规则（与 validate-maps.mjs 一致）：
  *  - 出生点 S 恰好 1 个；终点 E 至少 1 个
- *  - S / E / C 下方 3 格内必须有落脚方块（# = B M m）
+ *  - S / E / C 下方 3 格内必须有落脚方块（#、=、B、M、m）
  *  - B / ^ / ~ 下方必须是实心（# 或 ~）
  */
-
 export interface ValidateIssue {
   msg: string;
   x?: number;
